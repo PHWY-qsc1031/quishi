@@ -1,0 +1,945 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>求是之路 · 浙江大学校史探索</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;500;600;700&display=swap');
+
+:root{
+  --gold:#d2b47b;--ink:#182331;--paper:#eee8dc;
+  --muted:#9da9b5;--line:rgba(210,180,123,.35);
+}
+*{box-sizing:border-box}
+html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#101923;color:#eee8dc;font-family:"Noto Serif SC",serif}
+button{font-family:inherit}
+canvas{display:block}
+#vignette{position:fixed;inset:0;z-index:2;pointer-events:none;background:radial-gradient(ellipse,transparent 35%,rgba(3,8,14,.56) 100%)}
+#topbar{position:fixed;z-index:5;top:20px;left:28px;right:28px;display:flex;justify-content:space-between;align-items:center;pointer-events:none}
+.brand{display:flex;align-items:center;gap:14px}
+.seal{width:42px;height:42px;border:1px solid var(--gold);display:grid;place-items:center;color:var(--gold);font-size:22px;transform:rotate(45deg)}
+.seal span{transform:rotate(-45deg)}
+.brand-title{font-size:14px;letter-spacing:5px}
+.brand-sub{font:9px monospace;letter-spacing:2px;color:#9caab7;margin-top:5px}
+#chapter-top{text-align:right}
+#chapter-top small{font:10px monospace;letter-spacing:3px;color:var(--gold)}
+#chapter-top strong{display:block;margin-top:5px;font-size:16px;font-weight:400;letter-spacing:3px}
+
+#mission{
+ position:fixed;z-index:5;left:26px;top:105px;width:255px;padding:18px;
+ background:linear-gradient(145deg,rgba(13,27,42,.91),rgba(13,21,32,.78));
+ border:1px solid var(--line);backdrop-filter:blur(12px)
+}
+.kicker{font:10px monospace;letter-spacing:3px;color:var(--gold)}
+#mission h2{font-size:19px;font-weight:500;letter-spacing:2px;margin:12px 0 7px}
+#mission-desc{font-size:11px;line-height:1.9;color:#b5c0c9}
+.progress-label{display:flex;justify-content:space-between;margin-top:17px;font:10px monospace;color:#cdbb98}
+.progress{height:3px;background:#344252;margin-top:8px}
+#progress-fill{height:100%;width:0;background:var(--gold);transition:.4s}
+#objectives{display:grid;gap:9px;margin-top:15px}
+.objective{display:flex;gap:9px;align-items:center;color:#8795a3;font-size:11px}
+.dot{width:7px;height:7px;border:1px solid #8997a5;border-radius:50%}
+.objective.done{color:#e2c78f}
+.objective.done .dot{background:var(--gold);border-color:var(--gold);box-shadow:0 0 9px var(--gold)}
+
+#right-tools{position:fixed;z-index:6;right:25px;top:100px;display:grid;gap:8px}
+.tool{
+ padding:10px 14px;background:rgba(11,24,38,.82);border:1px solid var(--line);
+ color:#e8d9ba;font-size:11px;letter-spacing:1px;cursor:pointer;backdrop-filter:blur(8px)
+}
+.tool:hover{background:rgba(174,139,82,.25)}
+#controls{position:fixed;z-index:5;right:25px;bottom:24px;text-align:right;color:#aab4bf;font:10px/2 monospace;pointer-events:none}
+.key{display:inline-block;padding:0 5px;border:1px solid #72808d;color:#e9d7b1;margin:0 2px}
+#hint{position:fixed;z-index:5;bottom:30px;left:50%;transform:translateX(-50%);padding:11px 22px;background:rgba(9,19,30,.85);border:1px solid var(--line);color:#e9d7b1;font-size:12px;letter-spacing:2px;opacity:0;transition:.2s;pointer-events:none}
+#hint.show{opacity:1}
+#toast{position:fixed;z-index:30;top:85px;left:50%;transform:translateX(-50%);padding:12px 22px;background:#152538;border:1px solid var(--gold);color:#f0d9a9;font-size:12px;letter-spacing:2px;opacity:0;transition:.3s;pointer-events:none}
+#toast.show{opacity:1}
+
+.overlay{position:fixed;inset:0;z-index:20;display:none;align-items:center;justify-content:center;background:rgba(3,8,15,.82);backdrop-filter:blur(9px);padding:20px}
+.overlay.show{display:flex}
+.panel{
+ width:min(650px,94vw);max-height:88vh;overflow:auto;padding:30px;
+ background:linear-gradient(145deg,#1a2c40,#0b1725);
+ border:1px solid rgba(210,180,123,.55);box-shadow:0 25px 100px #000
+}
+.panel h2{font-weight:500;font-size:23px;letter-spacing:3px;margin:12px 0}
+.panel p{font-size:13px;line-height:2;color:#c4ccd2;white-space:pre-line}
+.panel .sub{font:10px monospace;color:var(--gold);letter-spacing:3px}
+.actions{display:grid;gap:9px;margin-top:20px}
+.choice{
+ padding:13px 15px;text-align:left;background:rgba(255,255,255,.04);
+ border:1px solid rgba(200,210,220,.2);color:#e2e5e7;cursor:pointer;font-size:12px
+}
+.choice:hover{border-color:var(--gold);background:rgba(210,180,123,.12)}
+.close{
+ margin-top:20px;padding:10px 20px;border:1px solid var(--gold);
+ color:#e6d2aa;background:transparent;cursor:pointer;letter-spacing:2px
+}
+
+/* 西迁路线地图 */
+#map-panel{width:min(900px,96vw)}
+.map-wrap{position:relative;margin-top:18px;padding:15px;background:#e7dfce;color:#26313b;overflow:hidden}
+.map-title{font-size:13px;letter-spacing:3px;text-align:center;color:#37434c}
+.map-note{text-align:center;font-size:10px;color:#68727a;margin:7px 0 12px}
+#route-svg{width:100%;height:auto;display:block}
+.route-node{cursor:pointer}
+.route-node circle{fill:#f8f0df;stroke:#8e6e42;stroke-width:2}
+.route-node text{font:12px "Noto Serif SC";fill:#303a42;text-anchor:middle}
+.route-node.done circle{fill:#c69c5d;stroke:#6d4e2d}
+.route-node.current circle{stroke:#b33d2d;stroke-width:4}
+.route-path{fill:none;stroke:#a44e3e;stroke-width:3;stroke-dasharray:7 5}
+.map-footer{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-top:13px;font-size:11px;color:#e3d3b4}
+.map-footer button{padding:9px 14px;background:#26384a;color:#f1dfbd;border:1px solid #b99b66;cursor:pointer}
+
+/* 图片档案墙 */
+#archive-panel{width:min(1000px,96vw)}
+.photo-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:15px;margin-top:20px}
+.photo{
+ position:relative;aspect-ratio:4/3;overflow:hidden;cursor:pointer;
+ border:1px solid rgba(210,180,123,.35);
+ background:linear-gradient(135deg,#5e6c70,#202e3a 55%,#b49a70)
+}
+.photo::before{content:"";position:absolute;inset:0;background:radial-gradient(circle at 50% 35%,rgba(231,208,162,.4),transparent 45%),linear-gradient(0deg,rgba(0,0,0,.8),transparent 70%)}
+.photo::after{content:attr(data-symbol);position:absolute;inset:0;display:grid;place-items:center;font-size:42px;color:rgba(245,228,193,.6)}
+.photo span{position:absolute;z-index:1;left:10px;bottom:10px;font-size:12px;color:#fff}
+.photo small{display:block;color:#d2b47b;font:9px monospace;margin-top:4px}
+.photo:hover{filter:brightness(1.25);transform:translateY(-3px)}
+#record-panel{text-align:center;width:min(480px,94vw);background:#f2eee6;color:#30332f;border:1px solid #c7b58f}
+.record{width:230px;height:230px;margin:10px auto 20px;border-radius:50%;background:repeating-radial-gradient(circle,#111 0 2px,#252525 3px 4px);position:relative;box-shadow:0 14px 40px #777}
+.record::after{content:"大不自多";position:absolute;inset:35%;border-radius:50%;background:#e8dfcd;display:grid;place-items:center;font-size:12px;letter-spacing:2px}
+.record.playing{animation:spin 3.5s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+#record-panel p{color:#5c625f}
+#music-file{display:none}
+#music-label{display:inline-block;margin:10px;padding:10px 18px;border:1px solid #59615e;cursor:pointer;font-size:12px}
+#music-play{padding:10px 18px;border:1px solid #59615e;background:#303b42;color:white;cursor:pointer}
+
+/* 开始界面 */
+#start{
+ position:fixed;inset:0;z-index:50;display:flex;align-items:center;justify-content:center;text-align:center;
+ background:radial-gradient(ellipse at 70% 40%,#52616a,#1a2a39 45%,#08111c 100%)
+}
+.start-content{max-width:700px;padding:25px}
+.start-kicker{font:11px monospace;letter-spacing:7px;color:var(--gold)}
+.start-title{font-size:clamp(42px,7vw,76px);letter-spacing:12px;margin:28px 0 10px;font-weight:500}
+.start-en{font:11px monospace;letter-spacing:5px;color:#a9b5bd}
+.start-line{width:100px;height:1px;background:var(--gold);margin:28px auto}
+.start-desc{font-size:13px;line-height:2.2;color:#c1cbd2}
+#start-btn{margin-top:32px;padding:14px 45px;border:1px solid var(--gold);background:transparent;color:#ecd8b2;letter-spacing:5px;cursor:pointer}
+#start-btn:hover{background:var(--gold);color:#101a24}
+#ending{position:fixed;inset:0;z-index:40;display:none;place-items:center;text-align:center;background:rgba(5,12,20,.92)}
+#ending.show{display:grid}
+#ending h1{font-size:42px;letter-spacing:8px;color:#e4c58d}
+#ending p{max-width:600px;padding:0 25px;line-height:2;color:#c6cdd1}
+@media(max-width:700px){
+ #mission{left:9px;top:85px;width:190px;padding:12px}
+ #right-tools{right:8px;top:auto;bottom:90px}
+ #controls{display:none}
+ #topbar{left:10px;right:10px;top:10px}
+ .brand-sub{display:none}
+ .brand-title{font-size:11px}
+}
+</style>
+</head>
+<body>
+<div id="vignette"></div>
+
+<div id="topbar">
+ <div class="brand">
+  <div class="seal"><span>求</span></div>
+  <div><div class="brand-title">求 是 之 路</div><div class="brand-sub">ZHEJIANG UNIVERSITY · HISTORY JOURNEY</div></div>
+ </div>
+ <div id="chapter-top"><small>HISTORICAL EXPLORATION</small><strong id="chapter-count">序章 · 01 / 05</strong></div>
+</div>
+
+<div id="mission">
+ <div class="kicker">CURRENT MISSION</div>
+ <h2 id="mission-name">求是书院溯源</h2>
+ <div id="mission-desc">寻找求是书院的历史档案。</div>
+ <div class="progress-label"><span>章节进度</span><span id="progress-text">0 / 3</span></div>
+ <div class="progress"><div id="progress-fill"></div></div>
+ <div id="objectives"></div>
+</div>
+
+<div id="right-tools">
+ <button class="tool" id="map-btn">⌖ 西迁路线图</button>
+ <button class="tool" id="archive-btn">▤ 校史档案墙</button>
+ <button class="tool" id="record-btn">♫ 唱片与校歌</button>
+ <button class="tool" id="npc-btn">◉ 竺可桢对话</button>
+</div>
+
+<div id="controls">
+ <span class="key">W</span><span class="key">A</span><span class="key">S</span><span class="key">D</span> 移动<br>
+ <span class="key">SHIFT</span> 奔跑　<span class="key">CTRL</span> 潜行<br>
+ <span class="key">E</span> 调查　鼠标拖动旋转视角
+</div>
+<div id="hint">按 E 调查历史档案</div>
+<div id="toast"></div>
+
+<!-- 互动弹窗 -->
+<div class="overlay" id="dialog">
+ <div class="panel">
+  <div class="sub" id="dialog-sub">HISTORICAL ARCHIVE</div>
+  <h2 id="dialog-title"></h2>
+  <p id="dialog-text"></p>
+  <div class="actions" id="dialog-actions"></div>
+  <button class="close" id="dialog-close">关闭</button>
+ </div>
+</div>
+
+<!-- 西迁地图 -->
+<div class="overlay" id="map-overlay">
+ <div class="panel" id="map-panel">
+  <div class="sub">THE GREAT WESTWARD MIGRATION</div>
+  <h2>文军长征 · 西迁路线沙盘</h2>
+  <div class="map-wrap">
+   <div class="map-title">国立浙江大学西迁路线示意图</div>
+   <div class="map-note">交互式路线节点 · 点击节点查看任务与历史信息</div>
+   <svg id="route-svg" viewBox="0 0 760 420" role="img" aria-label="西迁路线示意图">
+    <defs>
+     <pattern id="paper" width="18" height="18" patternUnits="userSpaceOnUse"><circle cx="2" cy="2" r="1" fill="#b7a98d" opacity=".3"/></pattern>
+    </defs>
+    <rect width="760" height="420" fill="#e9e0ce"/>
+    <rect width="760" height="420" fill="url(#paper)"/>
+    <path d="M0 90 Q120 40 210 105 T430 80 T760 130 M0 300 Q150 250 280 320 T540 280 T760 340" fill="none" stroke="#c8bea9" stroke-width="2"/>
+    <path class="route-path" d="M620 65 Q570 110 520 130 T420 170 T320 210 T220 260 T145 310 T85 350"/>
+    <g class="route-node" data-node="0"><circle cx="620" cy="65" r="13"/><text x="620" y="42">杭州</text></g>
+    <g class="route-node" data-node="1"><circle cx="520" cy="130" r="13"/><text x="520" y="105">西天目山</text></g>
+    <g class="route-node" data-node="2"><circle cx="420" cy="170" r="13"/><text x="420" y="145">建德</text></g>
+    <g class="route-node" data-node="3"><circle cx="320" cy="210" r="13"/><text x="320" y="185">吉安</text></g>
+    <g class="route-node" data-node="4"><circle cx="220" cy="260" r="13"/><text x="220" y="235">泰和</text></g>
+    <g class="route-node" data-node="5"><circle cx="145" cy="310" r="13"/><text x="145" y="285">宜山</text></g>
+    <g class="route-node" data-node="6"><circle cx="85" cy="350" r="13"/><text x="85" y="330">遵义</text></g>
+    <g class="route-node" data-node="7"><circle cx="240" cy="355" r="13"/><text x="240" y="385">湄潭</text></g>
+    <g class="route-node" data-node="8"><circle cx="420" cy="345" r="13"/><text x="420" y="375">永兴</text></g>
+   </svg>
+   <div class="map-footer">
+    <span id="map-progress">已点亮 0 / 9 个节点</span>
+    <button id="map-close">返回探索</button>
+   </div>
+  </div>
+  <p>提示：这是根据本游戏关卡设计绘制的路线示意沙盘，并非精确比例的历史地图。正式发布时建议以学校校史资料核对各站的具体时间与先后关系。</p>
+ </div>
+</div>
+
+<!-- 档案墙 -->
+<div class="overlay" id="archive-overlay">
+ <div class="panel" id="archive-panel">
+  <div class="sub">ZJU HISTORICAL COLLECTION</div>
+  <h2>求是 · 光影档案墙</h2>
+  <p>点击档案卡片，查看对应历史故事。未配置原图时会显示风格化占位画面。</p>
+  <div class="photo-grid" id="photo-grid"></div>
+  <button class="close" data-close="archive-overlay">返回</button>
+ </div>
+</div>
+
+<!-- 唱片机 -->
+<div class="overlay" id="record-overlay">
+ <div class="panel" id="record-panel">
+  <div class="sub">MUSIC & MEMORY</div>
+  <h2>大不自多 · 浙江大学校歌</h2>
+  <div class="record" id="record-disc"></div>
+  <p>可导入你合法取得的《毕业歌》或浙江大学校歌音频。</p>
+  <label id="music-label" for="music-file">选择本地音乐</label>
+  <input id="music-file" type="file" accept="audio/*">
+  <button id="music-play">播放 / 暂停</button>
+  <p id="music-status">尚未载入音频</p>
+  <button class="close" data-close="record-overlay">返回</button>
+ </div>
+</div>
+
+<!-- 竺可桢对话 -->
+<div class="overlay" id="npc-overlay">
+ <div class="panel">
+  <div class="sub">A CONVERSATION ACROSS TIME</div>
+  <h2>竺可桢 · 校长的两问</h2>
+  <p id="npc-text">“第一，到浙大来做什么？第二，将来毕业后要做什么样的人？”</p>
+  <div class="actions" id="npc-actions"></div>
+  <button class="close" data-close="npc-overlay">结束对话</button>
+ </div>
+</div>
+
+<div id="start">
+ <div class="start-content">
+  <div class="start-kicker">ZHEJIANG UNIVERSITY · 1897—TODAY</div>
+  <div class="start-title">求 是 之 路</div>
+  <div class="start-en">A JOURNEY THROUGH HISTORY</div>
+  <div class="start-line"></div>
+  <div class="start-desc">
+   一段跨越百年的求是之旅。<br>
+   从求是书院出发，穿越烽火岁月，<br>
+   在历史与理想之间，寻找求是精神的答案。
+  </div>
+  <button id="start-btn">开启探索</button>
+ </div>
+</div>
+
+<div id="ending">
+ <div>
+  <div class="start-kicker">THE JOURNEY CONTINUES</div>
+  <h1>求 是 之 路</h1>
+  <p>你已完成五个章节的历史探索。历史并未远去，求是精神仍在延续。愿你尊重事实、独立思考、勇于实践。</p>
+  <button class="close" onclick="location.reload()">重新开始</button>
+ </div>
+</div>
+
+<script type="module">
+import * as THREE from "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js";
+
+/* =====================================================
+   Three.js 场景
+===================================================== */
+const scene=new THREE.Scene();
+scene.background=new THREE.Color(0x9ba9b0);
+scene.fog=new THREE.FogExp2(0x9ba9b0,.009);
+
+const camera=new THREE.PerspectiveCamera(58,innerWidth/innerHeight,.1,500);
+const renderer=new THREE.WebGLRenderer({antialias:true});
+renderer.setSize(innerWidth,innerHeight);
+renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+renderer.shadowMap.enabled=true;
+renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+renderer.toneMapping=THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure=1.12;
+document.body.appendChild(renderer.domElement);
+
+scene.add(new THREE.HemisphereLight(0xdce8ef,0x35433e,1.45));
+const sun=new THREE.DirectionalLight(0xffe4bd,2.3);
+sun.position.set(-30,45,25);
+sun.castShadow=true;
+sun.shadow.mapSize.set(2048,2048);
+sun.shadow.camera.left=-60;sun.shadow.camera.right=60;
+sun.shadow.camera.top=60;sun.shadow.camera.bottom=-60;
+scene.add(sun);
+
+const fill=new THREE.PointLight(0xffc982,65,55);
+fill.position.set(0,12,0);
+scene.add(fill);
+
+const world=new THREE.Group();
+scene.add(world);
+const mat=(color,roughness=.8,metalness=0)=>new THREE.MeshStandardMaterial({color,roughness,metalness});
+const M={
+ ground:mat(0x46544f),stone:mat(0x777d79),wall:mat(0xb9ad96),
+ roof:mat(0x354451),wood:mat(0x604a36),gold:mat(0xc7a36c,.35,.45),
+ leaf:mat(0x3e6252),coat:mat(0x344b5c),skin:mat(0xe0c2a3),
+ hair:mat(0x292b30),cloth:mat(0x9c8668),dark:mat(0x1c2b37)
+};
+const add=(parent,g,m,x=0,y=0,z=0)=>{
+ const o=new THREE.Mesh(g,m);o.position.set(x,y,z);o.castShadow=true;o.receiveShadow=true;parent.add(o);return o;
+};
+const cube=(p,x,y,z,w,h,d,m)=>add(p,new THREE.BoxGeometry(w,h,d),m,x,y,z);
+const cyl=(p,x,y,z,r1,r2,h,m,n=12)=>add(p,new THREE.CylinderGeometry(r1,r2,h,n),m,x,y,z);
+
+function clearWorld(){
+ while(world.children.length){
+  const o=world.children[0];world.remove(o);
+  o.traverse(c=>{if(c.geometry)c.geometry.dispose();});
+ }
+}
+function ground(){
+ cube(world,0,-.5,0,150,1,150,M.ground);
+ for(let i=-12;i<=12;i++){
+  cube(world,i*2,.015,0,1.8,.04,70,i%2?mat(0x68716d):mat(0x59645f));
+ }
+}
+function tree(x,z,s=1){
+ cyl(world,x,.9*s,z,.18*s,.23*s,1.8*s,M.wood);
+ const crown=add(world,new THREE.IcosahedronGeometry(1.15*s,2),M.leaf,x,2.4*s,z);
+ crown.scale.set(1,1.25,1);
+ add(world,new THREE.IcosahedronGeometry(.72*s,1),mat(0x52705a),x+.4*s,3*s,z);
+}
+function lamp(x,z){
+ cyl(world,x,.9,z,.08,.13,1.8,M.gold);
+ const l=new THREE.PointLight(0xffc47c,15,10);l.position.set(x,2,z);world.add(l);
+ add(world,new THREE.SphereGeometry(.15,12,12),new THREE.MeshBasicMaterial({color:0xffd99d}),x,1.9,z);
+}
+function building(x,z,w,h,d,modern=false){
+ const g=new THREE.Group();world.add(g);g.position.set(x,0,z);
+ cube(g,0,h/2,0,w,h,d,modern?mat(0x647c8a,.35,.25):M.wall);
+ if(!modern){
+  cube(g,0,h+.08,0,w+1,.2,d+1,M.wood);
+  const roof=add(g,new THREE.ConeGeometry(w*.76,1.6,4),M.roof,0,h+.85,0);
+  roof.rotation.y=Math.PI/4;
+  for(let i=-2;i<=2;i++){
+   cube(g,i*w*.16,1.7,d/2+.08,.18,3.4,.18,M.wood);
+  }
+ }else{
+  cube(g,0,h+.2,0,w+.5,.4,d+.5,M.roof);
+  for(let i=-2;i<=2;i++)cube(g,i*w*.16,h*.55,d/2+.04,w*.1,h*.35,.08,M.gold);
+ }
+ cube(g,0,1.2,d/2+.08,1.5,2.4,.15,M.wood);
+ return g;
+}
+function stoneMarker(x,z){
+ cube(world,x,1.5,z,1.3,3,.55,M.stone);
+ cube(world,x,3.1,z,1.6,.16,.7,M.gold);
+}
+
+/* =====================================================
+   精细化主角：现代学生 / 民国长衫两套外观
+===================================================== */
+const player=new THREE.Group();
+scene.add(player);
+
+const torso=new THREE.Group();player.add(torso);
+const body=add(torso,new THREE.CapsuleGeometry(.38,.72,6,12),M.coat,0,1.18,0);
+const chest=cube(torso,0,1.25,0,.78,.82,.48,mat(0x526678));
+const collar=cube(torso,0,1.68,.02,.36,.18,.5,M.cloth);
+const head=add(player,new THREE.SphereGeometry(.29,24,20),M.skin,0,2.05,0);
+const hair=add(player,new THREE.SphereGeometry(.3,20,16),M.hair,0,2.22,-.04);
+hair.scale.set(1, .65, 1);
+const fringe=add(player,new THREE.SphereGeometry(.25,16,12),M.hair,0,2.12,.18);
+fringe.scale.set(1,.4,.5);
+const eyeMat=new THREE.MeshBasicMaterial({color:0x20252a});
+add(player,new THREE.SphereGeometry(.035,8,8),eyeMat,-.105,2.06,.255);
+add(player,new THREE.SphereGeometry(.035,8,8),eyeMat,.105,2.06,.255);
+
+// 背包、肩带、工具
+cube(player,0,1.2,-.34,.48,.62,.25,mat(0x6a5138));
+cube(player,-.23,1.2,-.18,.07,.7,.07,M.gold);
+cube(player,.23,1.2,-.18,.07,.7,.07,M.gold);
+cube(player,.43,1.35,.04,.12,.38,.13,M.gold); // 放大镜把手
+const lens=add(player,new THREE.TorusGeometry(.12,.025,8,20),M.gold,.43,1.58,.05);
+
+const armL=new THREE.Group(),armR=new THREE.Group(),legL=new THREE.Group(),legR=new THREE.Group();
+player.add(armL,armR,legL,legR);
+armL.position.set(-.48,1.55,0);armR.position.set(.48,1.55,0);
+legL.position.set(-.2,.72,0);legR.position.set(.2,.72,0);
+function limb(group,length,material){
+ add(group,new THREE.CapsuleGeometry(.12,length*.42,4,8),material,0,-length*.35,0);
+ add(group,new THREE.SphereGeometry(.12,10,8),M.skin,0,-length*.78,.015);
+}
+limb(armL,.75,M.coat);limb(armR,.75,M.coat);
+limb(legL,.78,M.dark);limb(legR,.78,M.dark);
+cube(player,0,.14,.05,.48,.22,.65,mat(0x292d32));
+
+function setPeriodCostume(isOld){
+ chest.material=isOld?mat(0x75614a):mat(0x526678);
+ collar.material=isOld?mat(0x9b866a):mat(0x9c8668);
+}
+player.position.set(0,0,9);
+
+/* =====================================================
+   章节内容与难度
+===================================================== */
+const chapters=[
+ {
+  name:"求是书院溯源",counter:"序章 · 01 / 05",
+  desc:"难度 ★☆☆☆☆　寻找书院档案，认识浙江大学的历史起点。",
+  scene:"academy",
+  tasks:[
+   {name:"寻找求是书院界碑",title:"求是书院的创立",text:"浙江大学的前身求是书院创立于哪一年？",opts:["1897年","1901年","1912年"],correct:0,info:"1897年，求是书院在杭州创立，成为浙江大学办学历史的重要起点。"},
+   {name:"阅读早期办学档案",title:"讲求实学",text:"求是书院创办于哪个世纪？",opts:["18世纪","19世纪","20世纪"],correct:1,info:"求是书院创立于19世纪末，开启了浙江近代高等教育的重要篇章。"},
+   {name:"收集第一枚记忆碎片",title:"求是精神",text:"求是精神最强调哪种治学态度？",opts:["只重书本记忆","实事求是、追求真理","只关注个人名利"],correct:1,info:"求是精神强调尊重事实、追求真理、崇尚实践。"}
+  ]
+ },
+ {
+  name:"文军长征 · 西迁",counter:"第二章 · 02 / 05",
+  desc:"难度 ★★☆☆☆　路线判断、物资护送与潜行探索。",
+  scene:"migration",
+  tasks:[
+   {name:"点亮西迁路线节点",title:"路线判断挑战",type:"route",text:"根据地图依次点亮西迁路线节点。请按照本游戏路线沙盘给出的顺序完成探索。"},
+   {name:"护送图书与仪器",title:"物资护送任务",type:"escort",text:"护送重要书籍与教学仪器抵达安全区域。"},
+   {name:"通过敌机巡逻区域",title:"隐蔽行动",type:"stealth",text:"穿过巡逻区域。按住 Ctrl 潜行，避免在巡逻灯附近暴露。"}
+  ]
+ },
+ {
+  name:"求是立训",counter:"第三章 · 03 / 05",
+  desc:"难度 ★★★☆☆　收集文献碎片，拼接校训线索，破解石碑。",
+  scene:"hall",
+  tasks:[
+   {name:"收集三份文献",title:"文献考证",text:"校训相关历史材料需要结合时代背景理解。哪一种做法最符合求是精神？",opts:["只相信单一传闻","多方查证史料、尊重事实","根据个人喜好判断"],correct:1,info:"史料考证需要多方核实，不能只凭传闻或主观判断。"},
+   {name:"破解石碑文字",title:"石碑解密",text:"“只问是非，不计利害”强调什么？",opts:["尊重真理，不因利害改变判断","凡事以个人利益为先","回避不同意见"],correct:0,info:"这句话体现了对真理与学术良知的坚持。"},
+   {name:"完成线索拼接",title:"求是立训",text:"求是精神与哪种行动最契合？",opts:["将知识用于实践、服务社会","只追求考试分数","只关注个人荣誉"],correct:0,info:"求是既是治学态度，也是行动准则，强调知行合一与社会责任。"}
+  ]
+ },
+ {
+  name:"竺老两问",counter:"第四章 · 04 / 05",
+  desc:"难度 ★★★★☆　与竺可桢校长对话，完成剧情抉择与个人回答。",
+  scene:"hall",
+  tasks:[
+   {name:"聆听竺老两问",title:"第一问",text:"竺可桢先生曾向新生提出的第一问是：",opts:["到浙大来做什么？","如何获得最高分？","怎样尽快毕业？"],correct:0,info:"第一问引导学生思考求学的真正目的。"},
+   {name:"寻找第二问手稿",title:"第二问",text:"竺可桢先生提出的第二问是：",opts:["如何获得更多财富？","将来毕业后要做什么样的人？","如何避免承担责任？"],correct:1,info:"第二问强调人格养成与社会责任。"},
+   {name:"回答自己的选择",title:"你的求是答案",type:"personal",text:"如果你是当年的新生，你会如何回答竺可桢先生？"}
+  ]
+ },
+ {
+  name:"古今交汇 · 紫金港",counter:"终章 · 05 / 05",
+  desc:"难度 ★★★★★　全收集校验、历史时间轴复盘与隐藏彩蛋。",
+  scene:"modern",
+  tasks:[
+   {name:"核对合并历史",title:"新浙江大学",text:"1998年，哪几所学校合并组建了新的浙江大学？",opts:["原浙大、杭州大学、浙江农业大学、浙江医科大学","仅原浙大与杭州大学","浙江大学与南京大学"],correct:0,info:"1998年，原浙江大学、杭州大学、浙江农业大学、浙江医科大学合并组建新的浙江大学。"},
+   {name:"完成时间轴复盘",title:"历史的延续",text:"理解校史最重要的意义是什么？",opts:["只记住年份","理解精神传承，并思考当下的责任","只关注建筑变化"],correct:1,info:"校史不仅是年份与事件，更是精神、学术传统与社会责任的延续。"},
+   {name:"完成最终试炼",title:"求是之路",text:"如何在今天延续求是精神？",opts:["尊重事实、独立思考、勇于实践","盲从结论","回避困难"],correct:0,info:"求是之路没有终点。尊重事实、独立思考、勇于实践，是对求是精神最好的传承。"}
+  ]
+ }
+];
+
+const routeNames=["杭州","西天目山","建德","吉安","泰和","宜山","遵义","湄潭","永兴"];
+let chapterIndex=0,taskIndex=0,markers=[],nearest=null;
+let activeTask=null,modalOpen=false,routeProgress=0;
+let escortStarted=false,stealthStarted=false,deliveryDone=false;
+let keys={},yaw=0,pitch=.22,dragging=false,lastX=0,lastY=0;
+let playerMoving=false;
+const $=id=>document.getElementById(id);
+
+/* =====================================================
+   场景搭建
+===================================================== */
+function buildScene(){
+ clearWorld();
+ markers=[];
+ const kind=chapters[chapterIndex].scene;
+ ground();
+
+ for(let z=-28;z<=28;z+=10){lamp(-10,z);lamp(10,z);}
+ for(let x=-25;x<=25;x+=9){tree(x,-18,1.15);tree(x,20,.9);}
+
+ if(kind==="academy"){
+  building(0,-16,16,7,7);
+  building(-17,-4,8,5,7);
+  building(17,-4,8,5,7);
+  building(0,15,10,4,7);
+  stoneMarker(0,-4);
+ }
+ if(kind==="migration"){
+  setPeriodCostume(true);
+  for(let i=0;i<13;i++){
+   const m=add(world,new THREE.ConeGeometry(7,13,5),mat(i%2?0x405b60:0x30464f),-38+i*7,5,-30-Math.sin(i)*4);
+   m.rotation.y=i*.35;
+  }
+  building(-16,-2,9,4,7);
+  building(16,-9,9,4,7);
+  // 行军道路与物资箱
+  cube(world,0,-.03,1,5,.1,60,mat(0x8a806c));
+  for(let i=0;i<7;i++){
+   const x=-4+(i%3)*1.3,z=5+Math.floor(i/3)*2;
+   cube(world,x,.6,z,1.1,1.1,1.1,M.wood);
+   cube(world,x,.7,z,1.14,.08,1.14,M.gold);
+  }
+  // 巡逻探照灯
+  const patrol=new THREE.Group();world.add(patrol);
+  const beam=new THREE.SpotLight(0xffd79a,95,28,Math.PI/7,.4,1);
+  beam.position.set(-8,10,-10);beam.target.position.set(0,0,0);
+  patrol.add(beam);patrol.add(beam.target);patrol.userData.beam=beam;
+  world.userData.patrol=patrol;
+ }
+ if(kind==="hall"){
+  setPeriodCostume(false);
+  building(0,-13,18,9,10);
+  building(-19,2,8,5,7);
+  building(19,2,8,5,7);
+  for(let i=0;i<5;i++)cube(world,0,.15+i*.22,-5+i*.65,12-i*.7,.3,1,M.stone);
+  stoneMarker(0,1);
+ }
+ if(kind==="modern"){
+  setPeriodCostume(false);
+  building(0,-14,18,12,8,true);
+  building(-19,0,10,8,8,true);
+  building(19,0,10,8,8,true);
+  cube(world,0,.04,2,18,.08,9,mat(0x315d6d,.15,.5));
+  for(let i=0;i<8;i++)tree(-24+i*7,22,.85);
+ }
+ // 远景
+ for(let i=0;i<10;i++)cube(world,-42+i*9,5,-42,6,10,5,mat(0x263744));
+ player.position.set(0,0,9);
+ player.rotation.y=0;
+
+ const positions=[[-7,0,0],[7,0,-8],[0,0,-22]];
+ chapters[chapterIndex].tasks.forEach((task,i)=>{
+  const g=new THREE.Group();g.position.set(...positions[i]);
+  world.add(g);
+  const ring=add(g,new THREE.TorusGeometry(.8,.045,8,36),M.gold,0,.08,0);
+  ring.rotation.x=Math.PI/2;
+  const orb=add(g,new THREE.IcosahedronGeometry(.25,1),
+   new THREE.MeshStandardMaterial({color:0xffd58c,emissive:0xb67a35,emissiveIntensity:1.8}),0,1.4,0);
+  add(g,new THREE.CylinderGeometry(.03,.13,1.2,8),
+   new THREE.MeshBasicMaterial({color:0xe7bd79,transparent:true,opacity:.2}),0,.8,0);
+  markers.push({group:g,orb,task,index:i,done:false});
+ });
+ updateUI();
+}
+
+/* =====================================================
+   UI、任务与答题
+===================================================== */
+function updateUI(){
+ const c=chapters[chapterIndex];
+ $("chapter-count").textContent=c.counter;
+ $("mission-name").textContent=c.name;
+ $("mission-desc").textContent=c.desc;
+ $("progress-text").textContent=`${taskIndex} / ${c.tasks.length}`;
+ $("progress-fill").style.width=(taskIndex/c.tasks.length*100)+"%";
+ $("objectives").innerHTML=c.tasks.map((t,i)=>`
+  <div class="objective ${i<taskIndex?'done':''}">
+   <span class="dot"></span>${t.name}
+  </div>`).join("");
+}
+function toast(s){
+ $("toast").textContent=s;$("toast").classList.add("show");
+ setTimeout(()=>$("toast").classList.remove("show"),2300);
+}
+function showDialog(title,text,opts=[],callback=null){
+ modalOpen=true;
+ $("dialog-title").textContent=title;
+ $("dialog-text").textContent=text;
+ $("dialog-sub").textContent=`CHAPTER ${chapterIndex+1} · ARCHIVE`;
+ $("dialog-actions").innerHTML="";
+ opts.forEach((v,i)=>{
+  const b=document.createElement("button");b.className="choice";b.textContent=v;
+  b.onclick=()=>callback?.(i);$("dialog-actions").appendChild(b);
+ });
+ $("dialog").classList.add("show");
+}
+function closeDialog(){
+ $("dialog").classList.remove("show");modalOpen=false;activeTask=null;
+}
+$("dialog-close").onclick=closeDialog;
+function completeTask(info){
+ if(activeTask)activeTask.done=true;
+ taskIndex++;
+ $("dialog-title").textContent="任务完成";
+ $("dialog-text").textContent=info;
+ $("dialog-actions").innerHTML="";
+ $("dialog-close").textContent="继续探索";
+ updateUI();
+ if(taskIndex>=chapters[chapterIndex].tasks.length){
+  setTimeout(()=>{closeDialog();chapterComplete();},850);
+ }
+}
+function chapterComplete(){
+ modalOpen=true;
+ $("dialog").classList.add("show");
+ $("dialog-sub").textContent="CHAPTER COMPLETED";
+ $("dialog-title").textContent=chapterIndex===4?"求是之路 · 完成":"本章探索完成";
+ $("dialog-text").textContent=chapterIndex===4?
+  "你已完成五个章节。求是精神仍在延续。点击下方按钮查看最终时间轴。":
+  "本章任务全部完成。你已经获得新的历史记忆碎片。";
+ $("dialog-actions").innerHTML="";
+ $("dialog-close").textContent=chapterIndex===4?"完成旅程":"进入下一章";
+ $("dialog-close").onclick=()=>{
+  closeDialog();$("dialog-close").textContent="关闭";
+  $("dialog-close").onclick=closeDialog;
+  if(chapterIndex<4){
+   chapterIndex++;taskIndex=0;routeProgress=0;
+   escortStarted=false;stealthStarted=false;deliveryDone=false;
+   buildScene();toast("新章节已开启");
+   if(chapterIndex===1)openMap();
+  }else{
+   $("ending").classList.add("show");
+  }
+ };
+}
+function openMarker(m){
+ if(m.done||modalOpen)return;
+ activeTask=m;
+ const t=m.task;
+ if(t.type==="route"){
+  showDialog(t.title,"打开西迁路线图，依次点亮各个路线节点。",["打开路线沙盘"],()=>{closeDialog();openMap();});
+ }else if(t.type==="escort"){
+  showDialog(t.title,"护送物资箱抵达安全区域。\n\n操作：WASD 移动，靠近金色终点标记后按 E 完成护送。",["开始护送"],()=>{
+   escortStarted=true;closeDialog();toast("护送任务开始：前往地图深处的安全营地");
+   createDestination();
+  });
+ }else if(t.type==="stealth"){
+  showDialog(t.title,"敌机探照灯正在巡逻。\n\n按住 Ctrl 潜行，尽量避开巡逻光束，抵达远处的安全标记。",["开始潜行"],()=>{
+   stealthStarted=true;closeDialog();createDestination();toast("潜行开始：避开探照灯");
+  });
+ }else if(t.type==="personal"){
+  showDialog(t.title,t.text,["选择：求知与真理","选择：服务社会","选择：独立思考"],i=>{
+   closeDialog();completeTask(["你选择以求知与真理为方向。","你选择将个人理想与社会责任相连。","你选择保持独立思考与求是精神。"][i]);
+  });
+ }else{
+  showDialog(t.title,t.text,t.opts,i=>{
+   if(i!==t.correct){toast("答案不正确，请结合史料重新判断");return;}
+   completeTask(t.info);
+  });
+ }
+}
+function createDestination(){
+ const old=world.getObjectByName("mission-destination");
+ if(old)world.remove(old);
+ const g=new THREE.Group();g.name="mission-destination";g.position.set(0,0,-27);
+ world.add(g);
+ add(g,new THREE.TorusGeometry(1.2,.08,8,40),M.gold,0,.1,0).rotation.x=Math.PI/2;
+ add(g,new THREE.CylinderGeometry(.05,.2,2,8),new THREE.MeshBasicMaterial({color:0xffd58c}),0,1,0);
+}
+
+/* =====================================================
+   西迁地图路线互动
+===================================================== */
+function openMap(){
+ $("map-overlay").classList.add("show");modalOpen=true;updateMap();
+}
+function updateMap(){
+ $("map-progress").textContent=`已点亮 ${routeProgress} / ${routeNames.length} 个节点`;
+ document.querySelectorAll(".route-node").forEach((n,i)=>{
+  n.classList.toggle("done",i<routeProgress);
+  n.classList.toggle("current",i===routeProgress);
+ });
+}
+$("map-close").onclick=()=>{
+ $("map-overlay").classList.remove("show");modalOpen=false;
+};
+document.querySelectorAll(".route-node").forEach((node)=>{
+ node.addEventListener("click",()=>{
+  if(chapterIndex!==1)return;
+  const i=Number(node.dataset.node);
+  if(i===routeProgress){
+   routeProgress++;updateMap();
+   toast("路线节点已点亮："+routeNames[i]);
+   if(routeProgress===routeNames.length){
+    $("map-overlay").classList.remove("show");modalOpen=false;
+    if(activeTask){activeTask.done=true;completeTask("路线节点全部点亮。你已经完成西迁路线探索。");}
+   }
+  }else if(i<routeProgress){
+   toast("这个节点已经调查过了");
+  }else{
+   toast("路线顺序不正确：请沿着历史路线继续探索");
+   scene.fog.color.setHex(0x68717a);
+  }
+ });
+});
+$("map-btn").onclick=()=>openMap();
+
+/* =====================================================
+   移动、镜头与探索
+===================================================== */
+window.addEventListener("keydown",e=>{
+ keys[e.key.toLowerCase()]=true;
+ if(e.key.toLowerCase()==="e")interact();
+});
+window.addEventListener("keyup",e=>keys[e.key.toLowerCase()]=false);
+renderer.domElement.addEventListener("pointerdown",e=>{
+ dragging=true;lastX=e.clientX;lastY=e.clientY;
+});
+window.addEventListener("pointerup",()=>dragging=false);
+window.addEventListener("pointermove",e=>{
+ if(!dragging||modalOpen)return;
+ yaw-=(e.clientX-lastX)*.004;
+ pitch=THREE.MathUtils.clamp(pitch+(e.clientY-lastY)*.003,-.1,.8);
+ lastX=e.clientX;lastY=e.clientY;
+});
+function updatePlayer(dt,time){
+ if(modalOpen)return;
+ const f=new THREE.Vector3(-Math.sin(yaw),0,-Math.cos(yaw));
+ const r=new THREE.Vector3(Math.cos(yaw),0,-Math.sin(yaw));
+ const v=new THREE.Vector3();
+ if(keys.w)v.add(f);if(keys.s)v.sub(f);
+ if(keys.a)v.sub(r);if(keys.d)v.add(r);
+ playerMoving=v.lengthSq()>0;
+ if(playerMoving){
+  v.normalize();
+  const speed=keys.control?2.1:(keys.shift?8:4.6);
+  player.position.addScaledVector(v,speed*dt);
+  player.rotation.y=Math.atan2(-v.x,-v.z);
+ }
+ player.position.x=THREE.MathUtils.clamp(player.position.x,-38,38);
+ player.position.z=THREE.MathUtils.clamp(player.position.z,-38,38);
+
+ const run=playerMoving?(keys.shift?1.6:1):0;
+ armL.rotation.x=Math.sin(time*9)*.45*run;
+ armR.rotation.x=-Math.sin(time*9)*.45*run;
+ legL.rotation.x=-Math.sin(time*9)*.5*run;
+ legR.rotation.x=Math.sin(time*9)*.5*run;
+ torso.rotation.z=playerMoving?Math.sin(time*9)*.025:0;
+
+ // 护送物资箱：跟随主角
+ if(escortStarted&&!deliveryDone){
+  let crate=world.getObjectByName("escort-crate");
+  if(!crate){
+   crate=new THREE.Group();crate.name="escort-crate";
+   cube(crate,0,.45,0,1.1,.9,1.1,M.wood);
+   cube(crate,0,.48,0,1.15,.1,1.15,M.gold);
+   world.add(crate);
+  }
+  crate.position.set(player.position.x+.9,0,player.position.z+1.2);
+  if(player.position.distanceTo(new THREE.Vector3(0,0,-27))<3){
+   deliveryDone=true;escortStarted=false;
+   if(activeTask){activeTask.done=true;completeTask("物资箱已安全抵达。图书与仪器得到妥善保护。");}
+  }
+ }
+ if(stealthStarted){
+  const patrol=world.userData.patrol;
+  if(patrol){
+   patrol.position.x=Math.sin(time*.6)*9;
+   patrol.position.z=Math.cos(time*.4)*3;
+   const exposed=!keys.control&&player.position.distanceTo(patrol.position)<10;
+   if(exposed)stealthMeter=Math.min(100,stealthMeter+dt*22);
+   else stealthMeter=Math.max(0,stealthMeter-dt*12);
+   if(stealthMeter>=100){
+    stealthMeter=0;toast("被探照灯发现！退回阴影处重新尝试");
+    player.position.set(0,0,9);
+   }
+  }
+  if(player.position.distanceTo(new THREE.Vector3(0,0,-27))<3){
+   stealthStarted=false;
+   if(activeTask){activeTask.done=true;completeTask("你成功避开巡逻探照灯，抵达安全区域。");}
+  }
+ }
+}
+let stealthMeter=0;
+
+function updateCamera(dt){
+ const d=7.8;
+ const target=new THREE.Vector3(
+  player.position.x+Math.sin(yaw)*d*Math.cos(pitch),
+  player.position.y+3+Math.sin(pitch)*d,
+  player.position.z+Math.cos(yaw)*d*Math.cos(pitch)
+ );
+ camera.position.lerp(target,1-Math.pow(.001,dt));
+ camera.lookAt(player.position.x,1.35,player.position.z);
+}
+function findNearest(){
+ let best=null,dist=999;
+ markers.forEach(m=>{
+  if(m.done)return;
+  const d=m.group.position.distanceTo(player.position);
+  if(d<dist){dist=d;best=m;}
+ });
+ return dist<3.5?best:null;
+}
+function interact(){
+ if(modalOpen)return;
+ if(escortStarted||stealthStarted){
+  toast("继续前往远处的金色安全标记");return;
+ }
+ const n=findNearest();
+ if(n)openMarker(n);
+ else toast("附近没有可调查的目标");
+}
+function updateMarkers(time){
+ nearest=findNearest();
+ $("hint").classList.toggle("show",!!nearest&&!modalOpen);
+ markers.forEach(m=>{
+  if(m.done)return;
+  m.orb.position.y=1.4+Math.sin(time*2+m.index)*.18;
+  m.orb.rotation.y=time;
+  const s=m===nearest?1.25:1;
+  m.group.scale.lerp(new THREE.Vector3(s,s,s),.12);
+ });
+}
+
+/* =====================================================
+   校史档案墙：12个档案卡片
+===================================================== */
+const archiveData=[
+ ["求是书院界碑","1897 · 求是溯源","书院创立，开启浙江近代高等教育的重要篇章。","书"],
+ ["早期书院课堂","1897—1927 · 求是溯源","求是书院倡导讲求实学，培养近代人才。","学"],
+ ["校名更迭图谱","清末民初 · 校史沿革","学校经历多次调整，求是学风逐渐形成。","史"],
+ ["国立浙江大学","1927—1937 · 国立浙大","学校逐步发展为具有多学科基础的高等学府。","校"],
+ ["竺可桢与浙大","1936—1949 · 校长岁月","竺可桢重视学术风气、人格教育与求是精神。","竺"],
+ ["西迁路线图","1937起 · 文军长征","师生在战火中辗转迁徙，坚持教学与研究。","迁"],
+ ["湄潭办学","抗战时期 · 西迁岁月","艰苦环境中，课堂、实验与学术研究仍在继续。","黔"],
+ ["文澜阁典籍保护","抗战时期 · 守护文脉","保护图书与典籍，延续文化与教育的火种。","典"],
+ ["求是校训","1938 · 求是立训","求是成为浙大重要的精神标识。","是"],
+ ["玉泉校区","院系调整后 · 发展","学校在调整中继续发展工科与多学科教育。","玉"],
+ ["紫金港校区","1998至今 · 新篇","四校合并组建新的浙江大学，开启发展新阶段。","新"],
+ ["竺老两问","求学与人生 · 精神传承","到浙大来做什么？将来毕业后要做什么样的人？","问"]
+];
+function buildArchive(){
+ const grid=$("photo-grid");grid.innerHTML="";
+ archiveData.forEach((p,i)=>{
+  const card=document.createElement("div");card.className="photo";
+  card.dataset.symbol=p[3];
+  const localImages=["qishi-stone.jpg","classroom.jpg","school-history.jpg","zju-old.jpg","zhu-ke-zhen.jpg","west-route.jpg","meitan.jpg","books.jpg","qishi-motto.jpg","yuquan.jpg","zijingang-gate.jpg","two-questions.jpg"];
+  card.style.backgroundImage=`linear-gradient(135deg,rgba(23,40,52,.2),rgba(7,15,24,.55)),url("assets/${localImages[i]}")`;
+  card.style.backgroundSize="cover";card.style.backgroundPosition="center";
+  card.innerHTML=`<span>${p[0]}<small>${p[1]}</small></span>`;
+  card.onclick=()=>showDialog(p[0],p[2],["继续浏览"],()=>closeDialog());
+  grid.appendChild(card);
+ });
+}
+buildArchive();
+$("archive-btn").onclick=()=>$("archive-overlay").classList.add("show");
+$("record-btn").onclick=()=>$("record-overlay").classList.add("show");
+$("npc-btn").onclick=()=>openNPC();
+document.querySelectorAll("[data-close]").forEach(b=>b.onclick=()=>$(b.dataset.close).classList.remove("show"));
+
+/* =====================================================
+   唱片机：导入本地合法音频
+===================================================== */
+const audio=new Audio();audio.loop=true;
+let audioURL="";
+$("music-file").onchange=()=>{
+ const f=$("music-file").files[0];if(!f)return;
+ if(audioURL)URL.revokeObjectURL(audioURL);
+ audioURL=URL.createObjectURL(f);audio.src=audioURL;
+ $("music-status").textContent="已载入："+f.name;
+ $("record-disc").classList.remove("playing");
+};
+$("music-play").onclick=()=>{
+ if(!audio.src){toast("请先选择本地音乐文件");return;}
+ if(audio.paused){
+  audio.play();$("record-disc").classList.add("playing");
+ }else{
+  audio.pause();$("record-disc").classList.remove("playing");
+ }
+};
+
+/* =====================================================
+   竺可桢剧情对话：逐句呈现 + 玩家回答
+===================================================== */
+const npcLines=[
+ "你好，年轻人。来到浙大，你是否思考过求学的真正目的？",
+ "我曾向新生提出两个问题：第一，到浙大来做什么？",
+ "第二，将来毕业后要做什么样的人？",
+ "大学不只是传授知识，更要培养人格、责任与独立思考的能力。",
+ "求是，不盲从，不附和；尊重事实，只问是非，不计利害。",
+ "现在，我想听听你的答案。你希望成为怎样的人？"
+];
+let npcIndex=0;
+function openNPC(){
+ $("npc-overlay").classList.add("show");
+ npcIndex=0;showNPCLine();
+}
+function showNPCLine(){
+ $("npc-text").textContent=npcLines[npcIndex];
+ const actions=$("npc-actions");actions.innerHTML="";
+ if(npcIndex<npcLines.length-1){
+  const b=document.createElement("button");b.className="choice";b.textContent="继续聆听";
+  b.onclick=()=>{npcIndex++;showNPCLine();};actions.appendChild(b);
+ }else{
+  ["成为追求真理、独立思考的人","成为服务社会、勇于担当的人","成为敢于实践、解决问题的人"].forEach((v,i)=>{
+   const b=document.createElement("button");b.className="choice";b.textContent=v;
+   b.onclick=()=>{
+    $("npc-text").textContent="（竺可桢微笑）"+v+"。愿你记住今天的选择，并在未来的行动中践行它。";
+    actions.innerHTML="";
+    const done=document.createElement("button");done.className="choice";done.textContent="结束对话";
+    done.onclick=()=>$("npc-overlay").classList.remove("show");
+    actions.appendChild(done);
+   };actions.appendChild(b);
+  });
+ }
+}
+
+/* =====================================================
+   启动与渲染
+===================================================== */
+$("start-btn").onclick=()=>{
+ $("start").style.display="none";
+ buildScene();
+ if(chapterIndex===0)toast("探索开始：寻找金色历史档案");
+};
+const clock=new THREE.Clock();
+function animate(){
+ requestAnimationFrame(animate);
+ const dt=Math.min(clock.getDelta(),.04),t=clock.elapsedTime;
+ updatePlayer(dt,t);
+ updateCamera(dt);
+ updateMarkers(t);
+ fill.intensity=60+Math.sin(t*1.4)*8;
+ renderer.render(scene,camera);
+}
+animate();
+
+window.addEventListener("resize",()=>{
+ camera.aspect=innerWidth/innerHeight;
+ camera.updateProjectionMatrix();
+ renderer.setSize(innerWidth,innerHeight);
+});
+</script>
+</body>
+</html>
